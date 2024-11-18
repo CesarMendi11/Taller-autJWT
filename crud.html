@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Empleados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .btn-primary,
+        .btn-danger {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .alert {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">Gestión de Empleados</h2>
+
+        <!-- Buscar por ID -->
+        <form id="searchForm" class="mb-4">
+            <div class="mb-3">
+                <label for="searchId" class="form-label">Buscar Empleado por ID</label>
+                <input type="number" id="searchId" class="form-control" placeholder="Introduce el ID del empleado" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+
+        <!-- Formulario de detalles del empleado -->
+        <form id="employeeForm" style="display: none;">
+            <h3 class="mb-3">Detalles del Empleado</h3>
+            <input type="hidden" id="employeeId">
+            <div class="form-group">
+                <label for="firstName" class="form-label">Nombre</label>
+                <input type="text" id="firstName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="lastName" class="form-label">Apellido</label>
+                <input type="text" id="lastName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="text" id="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="phoneNumber" class="form-label">Teléfono</label>
+                <input type="text" id="phoneNumber" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="hireDate" class="form-label">Fecha de Contratación</label>
+                <input type="date" id="hireDate" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="jobId" class="form-label">ID del Puesto</label>
+                <input type="text" id="jobId" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="salary" class="form-label">Salario</label>
+                <input type="number" id="salary" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="commissionPct" class="form-label">Comisión (%)</label>
+                <input type="number" id="commissionPct" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="managerId" class="form-label">ID del Gerente</label>
+                <input type="text" id="managerId" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="departmentId" class="form-label">ID del Departamento</label>
+                <input type="text" id="departmentId" class="form-control">
+            </div>
+            <button type="button" id="updateButton" class="btn btn-primary">Actualizar</button>
+            <button type="button" id="deleteButton" class="btn btn-danger">Eliminar</button>
+        </form>
+
+        <div id="message" class="alert alert-info" style="display: none;"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('searchId').value;
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/employees/${id}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('employeeForm').style.display = 'block';
+                    document.getElementById('employeeId').value = id;
+                    document.getElementById('firstName').value = data.first_name;
+                    document.getElementById('lastName').value = data.last_name;
+                    document.getElementById('email').value = data.email;
+                    document.getElementById('phoneNumber').value = data.phone_number;
+                    document.getElementById('hireDate').value = data.hire_date.split('T')[0];
+                    document.getElementById('jobId').value = data.job_id;
+                    document.getElementById('salary').value = data.salary;
+                    document.getElementById('commissionPct').value = data.commission_pct || '';
+                    document.getElementById('managerId').value = data.manager_id || '';
+                    document.getElementById('departmentId').value = data.department_id || '';
+                } else {
+                    displayMessage(data.error || 'Empleado no encontrado', 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        document.getElementById('updateButton').addEventListener('click', async () => {
+            if (!confirm('¿Estás seguro de actualizar los datos del empleado?')) return;
+
+            const id = document.getElementById('employeeId').value;
+            const body = {
+                first_name: document.getElementById('firstName').value,
+                last_name: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone_number: document.getElementById('phoneNumber').value,
+                hire_date: document.getElementById('hireDate').value,
+                job_id: document.getElementById('jobId').value,
+                salary: document.getElementById('salary').value,
+                commission_pct: document.getElementById('commissionPct').value,
+                manager_id: document.getElementById('managerId').value,
+                department_id: document.getElementById('departmentId').value,
+            };
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/employees/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(body),
+                });
+
+                const data = await response.json();
+                displayMessage(data.message || data.error, response.ok ? 'success' : 'danger');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        document.getElementById('deleteButton').addEventListener('click', async () => {
+            if (!confirm('¿Estás seguro de eliminar este empleado?')) return;
+
+            const id = document.getElementById('employeeId').value;
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/employees/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+
+                const data = await response.json();
+                displayMessage(data.message || data.error, response.ok ? 'success' : 'danger');
+
+                if (response.ok) {
+                    document.getElementById('employeeForm').reset();
+                    document.getElementById('employeeForm').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        function displayMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.style.display = 'block';
+            messageDiv.className = `alert alert-${type}`;
+            messageDiv.innerText = message;
+        }
+    </script>
+</body>
+
+</html>
